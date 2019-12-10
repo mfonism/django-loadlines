@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import connection, models
 from django.db.models.base import ModelBase
 
@@ -72,3 +73,36 @@ def fixture_setup_teardown_fruits_models_schema(all_concrete_fruits_models):
         # finally, teardown all schemas
         for model in all_concrete_fruits_models.values():
             schema_editor.delete_model(model)
+
+
+@pytest.fixture(name="fruits_fixtures_dir")
+def fixture_fruits_fixtures_dir():
+    return settings.BASE_DIR.joinpath("fruits", "fixtures")
+
+
+@pytest.fixture
+def mock_open(monkeypatch, fruits_fixtures_dir):
+    """
+    Monkeypatch `open` to yield the json lines of the appropriate file.
+    """
+    import builtins
+    from contextlib import contextmanager
+
+    # why the contextmanager decorator?
+    # because `open` is used in a `with` statement in the code that's to be tested
+
+    @contextmanager
+    def imposter(filepath, *args, **kwargs):
+        if filepath.parent == fruits_fixtures_dir:
+            if filepath.stem == "love":
+                yield ((f'{{"id":{i}}}') for i in range(1, 9))
+            elif filepath.stem == "joy":
+                yield ((f'{{"id":{i}}}') for i in range(1, 17))
+            elif filepath.stem == "peace":
+                yield ((f'{{"id":{i}}}') for i in range(1, 33))
+            else:
+                raise FileNotFoundError
+        else:
+            raise FileNotFoundError
+
+    monkeypatch.setattr(builtins, "open", imposter)

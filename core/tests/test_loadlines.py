@@ -1,3 +1,5 @@
+from django.core.management import call_command
+
 import pytest
 
 
@@ -10,12 +12,14 @@ import pytest
         ("fruits.peace", "fruits_peace", 32),
     ],
 )
-@pytest.mark.usefixtures("setup_teardown_fruits_models_schemas")
-def test_models_and_schema(
-    model_label, key, expected_count, all_concrete_fruits_models
-):
+@pytest.mark.usefixtures("setup_teardown_fruits_models_schemas", "mock_open")
+def test_loadlines(model_label, key, expected_count, all_concrete_fruits_models):
     """
-    Assert that models and schema are created.
+    Assert that `loadlines` populates the correct model with
+    the appropriate JSON Lines fixtures.
     """
     model = all_concrete_fruits_models[key]
     assert model._default_manager.count() == 0
+
+    call_command("loadlines", model_label)
+    assert model._default_manager.count() == expected_count

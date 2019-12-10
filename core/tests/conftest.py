@@ -7,6 +7,17 @@ from django.db.models.base import ModelBase
 import pytest
 
 
+def create_concrete_model(abstract_model):
+    """
+    Returns a concrete model created programmatically from argument abstract model.
+    """
+    return ModelBase(
+        abstract_model.__name__,
+        (abstract_model,),
+        {"__module__": abstract_model.__module__},
+    )
+
+
 @pytest.fixture(name="fruits_love", scope="module")
 def fixture_concrete_fruits_love_model():
     """
@@ -18,7 +29,7 @@ def fixture_concrete_fruits_love_model():
             abstract = True
             app_label = "fruits"
 
-    return ModelBase(Love.__name__, (Love,), {"__module__": Love.__module__})
+    return create_concrete_model(Love)
 
 
 @pytest.fixture(name="fruits_joy", scope="module")
@@ -32,7 +43,7 @@ def fixture_concrete_fruits_joy_model():
             abstract = True
             app_label = "fruits"
 
-    return ModelBase(Joy.__name__, (Joy,), {"__module__": Joy.__module__})
+    return create_concrete_model(Joy)
 
 
 @pytest.fixture(name="fruits_peace", scope="module")
@@ -46,7 +57,7 @@ def fixture_concrete_fruits_peace_model():
             abstract = True
             app_label = "fruits"
 
-    return ModelBase(Peace.__name__, (Peace,), {"__module__": Peace.__module__})
+    return create_concrete_model(Peace)
 
 
 @pytest.fixture(name="fruits_fixtureless", scope="module")
@@ -63,9 +74,7 @@ def fixture_concrete_fruits_fixtureless_model():
             abstract = True
             app_label = "fruits"
 
-    return ModelBase(
-        Fixtureless.__name__, (Fixtureless,), {"__module__": Fixtureless.__module__}
-    )
+    return create_concrete_model(Fixtureless)
 
 
 @pytest.fixture(name="all_concrete_fruits_models", scope="module")

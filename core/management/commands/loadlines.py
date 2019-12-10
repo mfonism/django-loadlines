@@ -33,6 +33,8 @@ class Command(BaseCommand):
         try:
             with transaction.atomic():
                 self.loadlines(model, fixtures_filepath)
+        except FileNotFoundError as e:
+            raise CommandError(str(e))
         except Exception as e:
             raise CommandError(
                 "\n\nTransaction was not committed due to the following exception:"
@@ -48,6 +50,13 @@ class Command(BaseCommand):
         )
 
     def iter_lines(self, fixtures_filepath):
-        with open(fixtures_filepath, mode="rt") as f:
-            for line in f:
-                yield line
+        try:
+            with open(fixtures_filepath, mode="rt") as f:
+                for line in f:
+                    yield line
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "Fixtures file not found.\n"
+                "Please make sure the appropriate fixtures exist "
+                f"in a file at {fixtures_filepath}"
+            )

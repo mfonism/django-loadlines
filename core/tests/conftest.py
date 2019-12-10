@@ -49,8 +49,29 @@ def fixture_concrete_fruits_peace_model():
     return ModelBase(Peace.__name__, (Peace,), {"__module__": Peace.__module__})
 
 
+@pytest.fixture(name="fruits_fixtureless", scope="module")
+def fixture_concrete_fruits_fixtureless_model():
+    """
+    Returns a concrete `Fixtureless` model in a `fruits` app.
+
+    The model `Fixtureless` is so-called because it mocks a model
+    which has no corresponding line JSON Lines fixtures file.
+    """
+
+    class Fixtureless(models.Model):
+        class Meta:
+            abstract = True
+            app_label = "fruits"
+
+    return ModelBase(
+        Fixtureless.__name__, (Fixtureless,), {"__module__": Fixtureless.__module__}
+    )
+
+
 @pytest.fixture(name="all_concrete_fruits_models", scope="module")
-def fixture_all_concrete_fruits_models(fruits_love, fruits_joy, fruits_peace):
+def fixture_all_concrete_fruits_models(
+    fruits_love, fruits_joy, fruits_peace, fruits_fixtureless
+):
     """
     Returns a map of all concrete models in the `fruits` app.
     """
@@ -58,6 +79,7 @@ def fixture_all_concrete_fruits_models(fruits_love, fruits_joy, fruits_peace):
         "fruits_love": fruits_love,
         "fruits_joy": fruits_joy,
         "fruits_peace": fruits_peace,
+        "fruits_fixtureless": fruits_fixtureless,
     }
 
 

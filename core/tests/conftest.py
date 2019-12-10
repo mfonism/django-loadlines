@@ -1,5 +1,6 @@
 from io import StringIO
 
+from django.apps.registry import apps
 from django.conf import settings
 from django.db import connection, models
 from django.db.models.base import ModelBase
@@ -7,15 +8,17 @@ from django.db.models.base import ModelBase
 import pytest
 
 
-def create_concrete_model(abstract_model):
+def get_or_create_concrete_model(model):
     """
-    Returns a concrete model created programmatically from argument abstract model.
+    Returns the concrete version of argument model.
+
+    Argument model may be a concrete model, in which case, it is returned as is.
+    Otherwise a concrete model programmatically created from argument model is returned.
     """
-    return ModelBase(
-        abstract_model.__name__,
-        (abstract_model,),
-        {"__module__": abstract_model.__module__},
-    )
+    try:
+        return apps.get_model(model._meta.label_lower)
+    except LookupError:
+        return ModelBase(model.__name__, (model,), {"__module__": model.__module__})
 
 
 @pytest.fixture(name="fruits_love", scope="module")
@@ -29,7 +32,7 @@ def fixture_concrete_fruits_love_model():
             abstract = True
             app_label = "fruits"
 
-    return create_concrete_model(Love)
+    return get_or_create_concrete_model(Love)
 
 
 @pytest.fixture(name="fruits_joy", scope="module")
@@ -43,7 +46,7 @@ def fixture_concrete_fruits_joy_model():
             abstract = True
             app_label = "fruits"
 
-    return create_concrete_model(Joy)
+    return get_or_create_concrete_model(Joy)
 
 
 @pytest.fixture(name="fruits_peace", scope="module")
@@ -57,7 +60,7 @@ def fixture_concrete_fruits_peace_model():
             abstract = True
             app_label = "fruits"
 
-    return create_concrete_model(Peace)
+    return get_or_create_concrete_model(Peace)
 
 
 @pytest.fixture(name="fruits_fixtureless", scope="module")
@@ -74,7 +77,7 @@ def fixture_concrete_fruits_fixtureless_model():
             abstract = True
             app_label = "fruits"
 
-    return create_concrete_model(Fixtureless)
+    return get_or_create_concrete_model(Fixtureless)
 
 
 @pytest.fixture(name="all_concrete_fruits_models", scope="module")

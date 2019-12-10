@@ -43,6 +43,9 @@ class Command(BaseCommand):
         for count, line in enumerate(self.iter_lines(fixtures_filepath)):
             payload = json.loads(line)
             model._default_manager.create(**payload)
+        self.stdout.write(
+            f"Created: {count + 1} objects of the model {model._meta.label}"
+        )
 
     def iter_lines(self, fixtures_filepath):
         with open(fixtures_filepath, mode="rt") as f:

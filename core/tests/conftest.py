@@ -1,3 +1,5 @@
+from io import StringIO
+
 from django.conf import settings
 from django.db import connection, models
 from django.db.models.base import ModelBase
@@ -106,3 +108,8 @@ def mock_open(monkeypatch, fruits_fixtures_dir):
             raise FileNotFoundError
 
     monkeypatch.setattr(builtins, "open", imposter)
+
+
+@pytest.fixture(name="stringIO")
+def fixture_stringIO():
+    return StringIO()

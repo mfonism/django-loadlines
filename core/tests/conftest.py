@@ -80,34 +80,49 @@ def fixture_concrete_fruits_fixtureless_model():
     return get_or_create_concrete_model(Fixtureless)
 
 
-@pytest.fixture(name="all_concrete_fruits_models", scope="module")
-def fixture_all_concrete_fruits_models(
-    fruits_love, fruits_joy, fruits_peace, fruits_fixtureless
+@pytest.fixture(name="commandments_love", scope="module")
+def fixture_concrete_commandments_love_model():
+    """
+    Returns a concrete `Love` model in a `commandments` app.
+    """
+
+    class Love(models.Model):
+        class Meta:
+            abstract = True
+            app_label = "commandments"
+
+    return get_or_create_concrete_model(Love)
+
+
+@pytest.fixture(name="all_concrete_models", scope="module")
+def fixture_all_concrete_models(
+    fruits_love, fruits_joy, fruits_peace, fruits_fixtureless, commandments_love
 ):
     """
-    Returns a map of all concrete models in the `fruits` app.
+    Returns a map of all concrete models in the test project.
     """
     return {
         "fruits_love": fruits_love,
         "fruits_joy": fruits_joy,
         "fruits_peace": fruits_peace,
         "fruits_fixtureless": fruits_fixtureless,
+        "commandments_love": commandments_love,
     }
 
 
-@pytest.fixture(name="setup_teardown_fruits_models_schemas")
-def fixture_setup_teardown_fruits_models_schema(all_concrete_fruits_models):
+@pytest.fixture(name="setup_teardown_all_models_schemas")
+def fixture_setup_teardown_all_models_schema(all_concrete_models):
     """
-    Ensures setup and teardown for schema of the concrete fruits models.
+    Ensures setup and teardown for schema of all the concrete models.
     """
     with connection.schema_editor() as schema_editor:
         # setup all schemas
-        for model in all_concrete_fruits_models.values():
+        for model in all_concrete_models.values():
             schema_editor.create_model(model)
         # yield control to code which makes use of any of the schema
         yield
         # finally, teardown all schemas
-        for model in all_concrete_fruits_models.values():
+        for model in all_concrete_models.values():
             schema_editor.delete_model(model)
 
 
@@ -116,8 +131,13 @@ def fixture_fruits_fixtures_dir():
     return settings.BASE_DIR.joinpath("fruits", "fixtures")
 
 
+@pytest.fixture(name="commandments_fixtures_dir")
+def fixture_commandments_fixtures_dir():
+    return settings.BASE_DIR.joinpath("commandments", "fixtures")
+
+
 @pytest.fixture
-def mock_open(monkeypatch, fruits_fixtures_dir):
+def mock_open(monkeypatch, fruits_fixtures_dir, commandments_fixtures_dir):
     """
     Monkeypatch `open` to yield the json lines of the appropriate file.
     """
@@ -129,15 +149,29 @@ def mock_open(monkeypatch, fruits_fixtures_dir):
 
     @contextmanager
     def imposter(filepath, *args, **kwargs):
+        # if in fruits app
         if filepath.parent == fruits_fixtures_dir:
+            # if for Love model
             if filepath.stem == "love":
                 yield ((f'{{"id":{i}}}') for i in range(1, 9))
+            # if for Joy model
             elif filepath.stem == "joy":
                 yield ((f'{{"id":{i}}}') for i in range(1, 17))
+            # if for Peace model
             elif filepath.stem == "peace":
                 yield ((f'{{"id":{i}}}') for i in range(1, 33))
+            # if unrecognized
             else:
                 raise FileNotFoundError
+        # if in commandments app
+        elif filepath.parent == commandments_fixtures_dir:
+            # if for Love model
+            if filepath.stem == "love":
+                yield ((f'{{"id":{i}}}') for i in range(1, 65))
+            # ifunrecognized
+            else:
+                raise FileNotFoundError
+        # if unrecognized
         else:
             raise FileNotFoundError
 

@@ -18,3 +18,12 @@ class FruitsConfig(AppConfig):
     # -------------
     # we're just making it point to the `core` module for now
     sys.modules["fruits"] = core
+
+
+class CommandmentsConfig(AppConfig):
+    """
+    App config for the `commandments` app used in tests.
+    """
+
+    name = "commandments"
+    sys.modules["commandments"] = core

@@ -27,7 +27,7 @@ class Command(BaseCommand):
             raise CommandError(str(e))
 
         fixtures_filepath = pathlib.Path(settings.BASE_DIR).joinpath(
-            app_label, "fixtures", f"{model_name}.jsonl"
+            app_label, "fixtures", f"{model._meta.verbose_name_plural}.jsonl"
         )
 
         try:

@@ -31,6 +31,7 @@ def fixture_concrete_fruits_love_model():
         class Meta:
             abstract = True
             app_label = "fruits"
+            verbose_name_plural = "lots_of_love"
 
     return get_or_create_concrete_model(Love)
 
@@ -59,6 +60,7 @@ def fixture_concrete_fruits_peace_model():
         class Meta:
             abstract = True
             app_label = "fruits"
+            verbose_name_plural = "plenty_of_peace"
 
     return get_or_create_concrete_model(Peace)
 
@@ -76,6 +78,7 @@ def fixture_concrete_fruits_fixtureless_model():
         class Meta:
             abstract = True
             app_label = "fruits"
+            verbose_name_plural = "fixturelesses"
 
     return get_or_create_concrete_model(Fixtureless)
 
@@ -90,6 +93,7 @@ def fixture_concrete_commandments_love_model():
         class Meta:
             abstract = True
             app_label = "commandments"
+            verbose_name_plural = "lots_of_love"
 
     return get_or_create_concrete_model(Love)
 
@@ -147,32 +151,45 @@ def mock_open(monkeypatch, fruits_fixtures_dir, commandments_fixtures_dir):
     # why the contextmanager decorator?
     # because `open` is used in a `with` statement in the code that's to be tested
 
+    # the files we're interested in
+    # are named according to the verbose_name_plural of the
+    # corresponding model
+    # so, you're going to see things like:
+    # loves, joys, plenty_of_peace...
+    # try to contain your WTFs
+
     @contextmanager
     def imposter(filepath, *args, **kwargs):
-        # if in fruits app
         if filepath.parent == fruits_fixtures_dir:
-            # if for Love model
-            if filepath.stem == "love":
+            # in fruits app
+
+            if filepath.stem == "lots_of_love":
+                # for Love model
                 yield ((f'{{"id":{i}}}') for i in range(1, 9))
-            # if for Joy model
-            elif filepath.stem == "joy":
+
+            elif filepath.stem == "joys":
+                # for Joy model
                 yield ((f'{{"id":{i}}}') for i in range(1, 17))
-            # if for Peace model
-            elif filepath.stem == "peace":
+
+            elif filepath.stem == "plenty_of_peace":
+                # for Peace model
                 yield ((f'{{"id":{i}}}') for i in range(1, 33))
-            # if unrecognized
+
             else:
+                # unrecognized model
                 raise FileNotFoundError
-        # if in commandments app
+
         elif filepath.parent == commandments_fixtures_dir:
-            # if for Love model
-            if filepath.stem == "love":
+            # in commandments app
+            if filepath.stem == "lots_of_love":
+                # for Love model
                 yield ((f'{{"id":{i}}}') for i in range(1, 65))
-            # ifunrecognized
             else:
+                # unrecognized model
                 raise FileNotFoundError
-        # if unrecognized
+
         else:
+            # unrecognized app
             raise FileNotFoundError
 
     monkeypatch.setattr(builtins, "open", imposter)

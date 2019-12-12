@@ -25,7 +25,7 @@ import pytest
 def test_loadlines(model_label, key, expected_count, all_concrete_models, stringIO):
     """
     Assert that `loadlines` populates the correct model with
-    the appropriate JSON Lines fixtures.
+    the appropriate JSON Lines fixture.
     """
     model = all_concrete_models[key]
     assert model._default_manager.count() == 0
@@ -53,7 +53,7 @@ def test_loadlines_for_fixtureless_models(
     """
     Assert that `loadlines` throws appropriate command error
     when an attempt is made to use it to populate model without
-    corresponding JSON Lines fixtures file.
+    corresponding JSON Lines fixture file.
     """
     model = all_concrete_models[key]
     assert model._default_manager.count() == 0
@@ -61,7 +61,7 @@ def test_loadlines_for_fixtureless_models(
     with pytest.raises(CommandError) as e:
         call_command("loadlines", model_label, stdout=stringIO)
 
-    assert "Fixtures file not found" in str(e.value)
+    assert "Fixture file not found" in str(e.value)
     assert model._default_manager.count() == 0
 
 
@@ -89,14 +89,14 @@ def test_loadlines_for_fixtures_with_few_bad_lines(
 
     # check rich info is printed
     assert (
-        "Bad payload in fixtures file at "
+        "Bad payload in fixture file at "
         f"{pathlib.Path(commandments_fixtures_dir).joinpath('respect.jsonl')}:"
         "\n---- Line no.: 5"
         '\n---- Content : {"id":5, "bad_key":"bad_value"}' in str_out
     )
 
     assert (
-        "Bad payload in fixtures file at "
+        "Bad payload in fixture file at "
         f"{pathlib.Path(commandments_fixtures_dir).joinpath('respect.jsonl')}:"
         "\n---- Line no.: 7"
         '\n---- Content : {"id":7, "another_bad_key":"another_bad_value"}' in str_out
@@ -104,7 +104,7 @@ def test_loadlines_for_fixtures_with_few_bad_lines(
 
     assert (
         f"Created: 6 objects of the model {model._meta.label}"
-        "\nEncountered 2 bad lines in the fixtures file."
+        "\nEncountered 2 bad lines in the fixture file."
         "\nPlease find rich info about the bad lines in the trace above." in str_out
     )
 

@@ -13,7 +13,7 @@ class Command(BaseCommand):
             "model_label",
             type=str,
             help=(
-                "The label of the model to be populated with the fixtures.\n"
+                "The label of the model to be populated with the fixture.\n"
                 "In the form <app_label>.<model_name>"
             ),
         )
@@ -26,7 +26,7 @@ class Command(BaseCommand):
         except LookupError as e:
             raise CommandError(str(e))
 
-        fixtures_filepath = pathlib.Path(settings.BASE_DIR).joinpath(
+        fixture_filepath = pathlib.Path(settings.BASE_DIR).joinpath(
             app_label, "fixtures", f"{model._meta.verbose_name_plural}.jsonl"
         )
 
@@ -39,7 +39,7 @@ class Command(BaseCommand):
                         f"Clearing the database of {model._meta.label} objects."
                         f"\n{population} objects deleted.\n"
                     )
-                self.loadlines(model, fixtures_filepath)
+                self.loadlines(model, fixture_filepath)
         except FileNotFoundError as e:
             raise CommandError(str(e))
         except Exception as e:
@@ -48,17 +48,17 @@ class Command(BaseCommand):
                 f"\n{e}"
             )
 
-    def loadlines(self, model, fixtures_filepath):
+    def loadlines(self, model, fixture_filepath):
         num_badlines = 0
 
-        for count, line in enumerate(self.iter_lines(fixtures_filepath)):
+        for count, line in enumerate(self.iter_fixture_file_lines(fixture_filepath)):
             try:
                 payload = json.loads(line)
                 model._default_manager.create(**payload)
             except Exception:
                 num_badlines += 1
                 self.stdout.write(
-                    f"Bad payload in fixtures file at {fixtures_filepath}:\n"
+                    f"Bad payload in fixture file at {fixture_filepath}:\n"
                     f"---- Line no.: {count + 1}\n"
                     f"---- Content : {line}\n\n"
                 )
@@ -70,18 +70,18 @@ class Command(BaseCommand):
 
         if num_badlines > 0:
             self.stdout.write(
-                f"Encountered {num_badlines} bad lines in the fixtures file.\n"
+                f"Encountered {num_badlines} bad lines in the fixture file.\n"
                 "Please find rich info about the bad lines in the trace above."
             )
 
-    def iter_lines(self, fixtures_filepath):
+    def iter_fixture_file_lines(self, fixture_filepath):
         try:
-            with open(fixtures_filepath, mode="rt") as f:
+            with open(fixture_filepath, mode="rt") as f:
                 for line in f:
                     yield line
         except FileNotFoundError:
             raise FileNotFoundError(
-                "Fixtures file not found.\n"
-                "Please make sure the appropriate fixtures exist "
-                f"in a file at {fixtures_filepath}"
+                "Fixture file not found.\n"
+                "Please make sure the appropriate fixture exists "
+                f"in a file at {fixture_filepath}"
             )

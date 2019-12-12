@@ -98,9 +98,29 @@ def fixture_concrete_commandments_love_model():
     return get_or_create_concrete_model(Love)
 
 
+@pytest.fixture(name="commandments_respect", scope="module")
+def fixture_concrete_commandments_respect_model():
+    """
+    Returns a concrete `Respect` model in a `commandments` app.
+    """
+
+    class Respect(models.Model):
+        class Meta:
+            abstract = True
+            app_label = "commandments"
+            verbose_name_plural = "respect"
+
+    return get_or_create_concrete_model(Respect)
+
+
 @pytest.fixture(name="all_concrete_models", scope="module")
 def fixture_all_concrete_models(
-    fruits_love, fruits_joy, fruits_peace, fruits_fixtureless, commandments_love
+    fruits_love,
+    fruits_joy,
+    fruits_peace,
+    fruits_fixtureless,
+    commandments_love,
+    commandments_respect,
 ):
     """
     Returns a map of all concrete models in the test project.
@@ -111,6 +131,7 @@ def fixture_all_concrete_models(
         "fruits_peace": fruits_peace,
         "fruits_fixtureless": fruits_fixtureless,
         "commandments_love": commandments_love,
+        "commandments_respect": commandments_respect,
     }
 
 
@@ -184,6 +205,21 @@ def mock_open(monkeypatch, fruits_fixtures_dir, commandments_fixtures_dir):
             if filepath.stem == "lots_of_love":
                 # for Love model
                 yield ((f'{{"id":{i}}}') for i in range(1, 65))
+            elif filepath.stem == "respect":
+                yield (
+                    iter(
+                        [
+                            '{"id":1}',
+                            '{"id":2}',
+                            '{"id":3}',
+                            '{"id":4}',
+                            '{"id":5, "bad_key":"bad_value"}',
+                            '{"id":6}',
+                            '{"id":7, "another_bad_key":"another_bad_value"}',
+                            '{"id":8}',
+                        ]
+                    )
+                )
             else:
                 # unrecognized model
                 raise FileNotFoundError

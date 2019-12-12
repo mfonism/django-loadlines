@@ -42,12 +42,30 @@ class Command(BaseCommand):
             )
 
     def loadlines(self, model, fixtures_filepath):
+        num_badlines = 0
+
         for count, line in enumerate(self.iter_lines(fixtures_filepath)):
-            payload = json.loads(line)
-            model._default_manager.create(**payload)
+            try:
+                payload = json.loads(line)
+                model._default_manager.create(**payload)
+            except Exception:
+                num_badlines += 1
+                self.stdout.write(
+                    f"Bad payload in fixtures file at {fixtures_filepath}:\n"
+                    f"---- Line no.: {count + 1}\n"
+                    f"---- Content : {line}\n\n"
+                )
+
         self.stdout.write(
-            f"Created: {count + 1} objects of the model {model._meta.label}"
+            f"Created: {count - num_badlines + 1} objects of "
+            f"the model {model._meta.label}"
         )
+
+        if num_badlines > 0:
+            self.stdout.write(
+                f"Encountered {num_badlines} bad lines in the fixtures file.\n"
+                "Please find rich info about the bad lines in the trace above."
+            )
 
     def iter_lines(self, fixtures_filepath):
         try:

@@ -1,3 +1,5 @@
+import pathlib
+
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
@@ -60,3 +62,47 @@ def test_loadlines_for_fixtureless_models(
 
     assert "Fixtures file not found" in str(e.value)
     assert model._default_manager.count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("setup_teardown_all_models_schemas", "mock_open")
+def test_loadlines_for_fixtures_with_few_bad_lines(
+    commandments_respect, stringIO, commandments_fixtures_dir
+):
+    """
+    Assert that `loadlines` is lenient on bad JSON Lines,
+    and prints rich information about the bad lines to stdout.
+
+    The fixture file in this test has 8 lines, 2 of which
+    aren't valid payload for the model in question.
+    """
+    model = commandments_respect
+    model_label = "commandments.Respect"
+    assert model._default_manager.count() == 0
+
+    call_command("loadlines", model_label, stdout=stringIO)
+    str_out = stringIO.getvalue().strip()
+
+    # six out of eight objects created
+    assert model._default_manager.count() == 6
+
+    # check rich info is printed
+    assert (
+        "Bad payload in fixtures file at "
+        f"{pathlib.Path(commandments_fixtures_dir).joinpath('respect.jsonl')}:"
+        "\n---- Line no.: 5"
+        '\n---- Content : {"id":5, "bad_key":"bad_value"}' in str_out
+    )
+
+    assert (
+        "Bad payload in fixtures file at "
+        f"{pathlib.Path(commandments_fixtures_dir).joinpath('respect.jsonl')}:"
+        "\n---- Line no.: 7"
+        '\n---- Content : {"id":7, "another_bad_key":"another_bad_value"}' in str_out
+    )
+
+    assert (
+        f"Created: 6 objects of the model {model._meta.label}"
+        "\nEncountered 2 bad lines in the fixtures file."
+        "\nPlease find rich info about the bad lines in the trace above." in str_out
+    )

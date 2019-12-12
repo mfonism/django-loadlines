@@ -29,16 +29,12 @@ class Command(BaseCommand):
         fixture_filepath = pathlib.Path(settings.BASE_DIR).joinpath(
             app_label, "fixtures", f"{model._meta.verbose_name_plural}.jsonl"
         )
+        self.atomically_loadlines(model, fixture_filepath)
 
+    def atomically_loadlines(self, model, fixture_filepath):
         try:
             with transaction.atomic():
-                population = model._default_manager.count()
-                if population > 0:
-                    model._default_manager.all().delete()
-                    self.stdout.write(
-                        f"Clearing the database of {model._meta.label} objects."
-                        f"\n{population} objects deleted.\n"
-                    )
+                self.wipe_table(model)
                 self.loadlines(model, fixture_filepath)
         except FileNotFoundError as e:
             raise CommandError(str(e))
@@ -48,31 +44,30 @@ class Command(BaseCommand):
                 f"\n{e}"
             )
 
+    def wipe_table(self, model):
+        count = model._default_manager.count()
+        if count > 0:
+            model._default_manager.all().delete()
+            self.report_wipe_table(model._meta.label, count)
+
     def loadlines(self, model, fixture_filepath):
         num_badlines = 0
 
-        for count, line in enumerate(self.iter_fixture_file_lines(fixture_filepath)):
+        for line_no, line in enumerate(
+            self.iter_fixture_file_lines(fixture_filepath), 1
+        ):
             try:
                 payload = json.loads(line)
                 model._default_manager.create(**payload)
             except Exception:
                 num_badlines += 1
-                self.stdout.write(
-                    f"Bad payload in fixture file at {fixture_filepath}:\n"
-                    f"---- Line no.: {count + 1}\n"
-                    f"---- Content : {line}\n\n"
-                )
+                self.report_bad_payload(fixture_filepath, line_no, content=line)
 
-        self.stdout.write(
-            f"Created: {count - num_badlines + 1} objects of "
-            f"the model {model._meta.label}"
+        self.report_loadlines(
+            model_label=model._meta.label,
+            num_loaded=line_no - num_badlines,
+            num_skipped=num_badlines,
         )
-
-        if num_badlines > 0:
-            self.stdout.write(
-                f"Encountered {num_badlines} bad lines in the fixture file.\n"
-                "Please find rich info about the bad lines in the trace above."
-            )
 
     def iter_fixture_file_lines(self, fixture_filepath):
         try:
@@ -84,4 +79,26 @@ class Command(BaseCommand):
                 "Fixture file not found.\n"
                 "Please make sure the appropriate fixture exists "
                 f"in a file at {fixture_filepath}"
+            )
+
+    def report_wipe_table(self, model_label, num_rows_wiped):
+        self.stdout.write(
+            f"Clearing the database of {model_label} objects."
+            f"\n{num_rows_wiped} objects deleted.\n"
+        )
+
+    def report_bad_payload(self, fixture_filepath, line_no, content):
+        self.stdout.write(
+            f"Bad payload in fixture file at {fixture_filepath}:\n"
+            f"---- Line no.: {line_no}\n"
+            f"---- Content : {content}\n\n"
+        )
+
+    def report_loadlines(self, model_label, num_loaded, num_skipped):
+        self.stdout.write(f"Created: {num_loaded} objects of the model {model_label}")
+
+        if num_skipped > 0:
+            self.stdout.write(
+                f"Encountered {num_skipped} bad lines in the fixture file.\n"
+                "Please find rich info about the bad lines in the trace above."
             )

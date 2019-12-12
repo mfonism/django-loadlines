@@ -1,3 +1,4 @@
+import copy
 import pathlib
 
 from django.core.management import call_command
@@ -105,4 +106,30 @@ def test_loadlines_for_fixtures_with_few_bad_lines(
         f"Created: 6 objects of the model {model._meta.label}"
         "\nEncountered 2 bad lines in the fixtures file."
         "\nPlease find rich info about the bad lines in the trace above." in str_out
+    )
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("setup_teardown_all_models_schemas", "mock_open")
+def test_loadlines_for_already_populated_model(fruits_love, stringIO):
+    """
+    Assert that `loadlines` wipes the table for the model clean before loading lines.
+    """
+    model = fruits_love
+    model_label = "fruits.Love"
+
+    call_command("loadlines", model_label, stdout=copy.deepcopy(stringIO))
+    assert model._default_manager.count() == 8
+
+    call_command("loadlines", model_label, stdout=stringIO)
+    assert model._default_manager.count() == 8
+
+    str_out = stringIO.getvalue().strip()
+
+    # ordinarily, all the lines should be Bad/Duplicate payload
+    # as their corresponding objects are already present in the respective table
+    # but `loadlines` should start with clean tables, so ...
+    assert "Bad payload" not in str_out
+    assert (
+        "Clearing the database of fruits.Love objects.\n8 objects deleted.\n" in str_out
     )

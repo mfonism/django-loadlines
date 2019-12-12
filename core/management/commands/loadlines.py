@@ -32,6 +32,13 @@ class Command(BaseCommand):
 
         try:
             with transaction.atomic():
+                population = model._default_manager.count()
+                if population > 0:
+                    model._default_manager.all().delete()
+                    self.stdout.write(
+                        f"Clearing the database of {model._meta.label} objects."
+                        f"\n{population} objects deleted.\n"
+                    )
                 self.loadlines(model, fixtures_filepath)
         except FileNotFoundError as e:
             raise CommandError(str(e))
